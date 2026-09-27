@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ruleta del Fulbito ⚽</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .pointer {
+      width: 0; 
+      height: 0; 
+      border-left: 15px solid transparent;
+      border-right: 15px solid transparent;
+      border-top: 25px solid #ef4444;
+    }
+    /* Estilo para suavizar las animaciones del acordeón */
+    details summary::-webkit-details-marker { display: none; }
+  </style>
+</head>
+<body class="bg-slate-900 text-white min-h-screen p-4 flex flex-col items-center font-sans">
+
+  <header class="text-center my-4">
+    <h1 class="text-3xl font-black tracking-wider text-green-400 uppercase">⚽ Ruleta del Fulbito</h1>
+    <p class="text-xs text-slate-400 mt-1">Sorteo del tesorerx y división de pagos</p>
+  </header>
+
+  <main class="w-full max-w-md space-y-4">
+
+    <!-- SECCIÓN 1: Calculadora de Costos (Desplegable) -->
+    <details class="bg-slate-800 rounded-2xl shadow-lg border border-slate-700 overflow-hidden group" open>
+      <summary class="p-4 font-bold text-sm text-slate-200 uppercase tracking-wide cursor-pointer flex justify-between items-center select-none bg-slate-800/80 hover:bg-slate-700/50 transition">
+        <span>🧮 Calculadora de la Cuota</span>
+        <span class="text-xs text-slate-400 transition-transform group-open:rotate-180">▼</span>
+      </summary>
+      <div class="p-4 pt-0 space-y-3 border-t border-slate-700/50 mt-2">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Costo Cancha ($)</label>
+            <input type="number" id="costoTotal" placeholder="120000" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-green-400 focus:outline-none focus:border-green-500">
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Jugadores</label>
+            <input type="number" id="numJugadores" placeholder="10" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-green-500">
+          </div>
+        </div>
+
+        <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-700/50 flex justify-between items-center">
+          <span class="text-xs text-slate-400">Cuota por persona:</span>
+          <span id="cuotaIndividual" class="text-lg font-extrabold text-green-400">$0</span>
+        </div>
+      </div>
+    </details>
+
+    <!-- SECCIÓN 2: Jugadores con Banners Dinámicos (Desplegable) -->
+    <details class="bg-slate-800 rounded-2xl shadow-lg border border-slate-700 overflow-hidden group" open>
+      <summary class="p-4 font-bold text-sm text-slate-200 uppercase tracking-wide cursor-pointer flex justify-between items-center select-none bg-slate-800/80 hover:bg-slate-700/50 transition">
+        <span>👥 Convocados (<span id="countJugadores">0</span>)</span>
+        <span class="text-xs text-slate-400 transition-transform group-open:rotate-180">▼</span>
+      </summary>
+      <div class="p-4 pt-0 space-y-3 border-t border-slate-700/50 mt-2">
+        
+        <!-- Input para agregar nombre -->
+        <div class="flex gap-2">
+          <input type="text" id="inputNombre" placeholder="Nombre del jugador..." class="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-slate-200 focus:outline-none focus:border-green-500">
+          <button onclick="agregarJugador()" class="bg-green-600 hover:bg-green-500 text-white px-4 rounded-lg text-sm font-bold transition flex items-center justify-center">
+            +
+          </button>
+        </div>
+
+        <!-- Contenedor de Banners/Chips -->
+        <div id="listaBanners" class="flex flex-wrap gap-2 min-h-[40px] p-2 bg-slate-900/50 rounded-xl border border-slate-700/50">
+          <!-- Se generan dinámicamente -->
+        </div>
+
+      </div>
+    </details>
+
+    <!-- SECCIÓN 3: La Ruleta Rusa (Desplegable) -->
+    <details class="bg-slate-800 rounded-2xl shadow-lg border border-slate-700 overflow-hidden group" open>
+      <summary class="p-4 font-bold text-sm text-slate-200 uppercase tracking-wide cursor-pointer flex justify-between items-center select-none bg-slate-800/80 hover:bg-slate-700/50 transition">
+        <span>🎲 Ruleta Rusa</span>
+        <span class="text-xs text-slate-400 transition-transform group-open:rotate-180">▼</span>
+      </summary>
+      <div class="p-4 pt-0 flex flex-col items-center border-t border-slate-700/50 mt-2">
+        
+        <!-- Indicador / Flecha -->
+        <div class="pointer z-10 -mb-2"></div>
+
+        <!-- Canvas de la Ruleta -->
+        <div class="relative w-64 h-64 my-2">
+          <canvas id="wheelCanvas" width="256" height="256" class="rounded-full shadow-2xl"></canvas>
+        </div>
+
+        <!-- Botón de Giro -->
+        <button id="spinBtn" onclick="girarRuleta()" class="mt-4 w-full bg-gradient-to-r from-red-600 to-rose-500 hover:from-red-500 hover:to-rose-400 text-white font-extrabold py-3 rounded-xl shadow-lg transform active:scale-95 transition tracking-wider uppercase text-sm">
+          🔥 ¡Girar!
+        </button>
+
+        <!-- Resultado -->
+        <div id="resultadoBox" class="hidden mt-4 p-3 bg-red-950/60 border border-red-500/50 rounded-xl text-center w-full animate-bounce">
+          <p class="text-xs text-red-300 font-medium">Le toca recoger la luk y pagar la cancha a:</p>
+          <p id="ganadorNombre" class="text-xl font-black text-red-400 uppercase tracking-wide mt-1"></p>
+        </div>
+
+      </div>
+    </details>
+
+  </main>
+
+  <script>
+    const canvas = document.getElementById('wheelCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Lista inicial de prueba
+    let nombres = ['Vani', 'Saro', 'Sofo', 'Puentes', 'Majo'];
+    let colors = ['#10b981', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4', '#f97316', '#e11d48'];
+    
+    let currentAngle = 0;
+    let isSpinning = false;
+
+    // Calculadora
+    const costoInput = document.getElementById('costoTotal');
+    const jugadoresInput = document.getElementById('numJugadores');
+    const cuotaDisplay = document.getElementById('cuotaIndividual');
+    const inputNombre = document.getElementById('inputNombre');
+
+    function calcularCuota() {
+      const costo = parseFloat(costoInput.value) || 0;
+      const cant = parseInt(jugadoresInput.value) || 0;
+      if (costo > 0 && cant > 0) {
+        const cuota = Math.ceil(costo / cant);
+        cuotaDisplay.textContent = `$${cuota.toLocaleString('es-CO')}`;
+      } else {
+        cuotaDisplay.textContent = '$0';
+      }
+    }
+
+    costoInput.addEventListener('input', calcularCuota);
+    jugadoresInput.addEventListener('input', calcularCuota);
+
+    // Permite agregar presionando Enter en el input
+    inputNombre.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') agregarJugador();
+    });
+
+    // Gestión de Jugadores (Banners)
+    function agregarJugador() {
+      const nombre = inputNombre.value.trim();
+      if (nombre !== "") {
+        nombres.push(nombre);
+        inputNombre.value = '';
+        renderBanners();
+        actualizarTodo();
+      }
+    }
+
+    function eliminarJugador(index) {
+      nombres.splice(index, 1);
+      renderBanners();
+      actualizarTodo();
+    }
+
+    function renderBanners() {
+      const contenedor = document.getElementById('listaBanners');
+      contenedor.innerHTML = '';
+
+      if (nombres.length === 0) {
+        contenedor.innerHTML = `<span class="text-xs text-slate-500 self-center w-full text-center">No hay convocados aún</span>`;
+        return;
+      }
+
+      nombres.forEach((nombre, index) => {
+        const chip = document.createElement('div');
+        chip.className = 'flex items-center gap-1.5 bg-slate-800 border border-slate-600 text-slate-200 text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm animate-fade-in';
+        chip.innerHTML = `
+          <span>${nombre}</span>
+          <button onclick="eliminarJugador(${index})" class="text-slate-400 hover:text-red-400 font-bold ml-1 text-sm leading-none">&times;</button>
+        `;
+        contenedor.appendChild(chip);
+      });
+    }
+
+    function actualizarTodo() {
+      // Actualizar contador y número de jugadores en calculadora
+      document.getElementById('countJugadores').textContent = nombres.length;
+      jugadoresInput.value = nombres.length;
+      calcularCuota();
+      dibujarRuleta();
+    }
+
+    function dibujarRuleta() {
+      if (nombres.length === 0) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#334155';
+        ctx.beginPath();
+        ctx.arc(128, 128, 120, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Agrega convocadxs', 128, 132);
+        return;
+      }
+
+      const numSlices = nombres.length;
+      const sliceAngle = (2 * Math.PI) / numSlices;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (let i = 0; i < numSlices; i++) {
+        const angle = currentAngle + i * sliceAngle;
+        
+        ctx.beginPath();
+        ctx.fillStyle = colors[i % colors.length];
+        ctx.moveTo(128, 128);
+        ctx.arc(128, 128, 120, angle, angle + sliceAngle);
+        ctx.lineTo(128, 128);
+        ctx.fill();
+
+        ctx.save();
+        ctx.translate(128, 128);
+        ctx.rotate(angle + sliceAngle / 2);
+        ctx.textAlign = "right";
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 12px sans-serif";
+        ctx.fillText(nombres[i], 110, 4);
+        ctx.restore();
+      }
+
+      ctx.beginPath();
+      ctx.fillStyle = '#0f172a';
+      ctx.arc(128, 128, 20, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+
+    function girarRuleta() {
+      if (isSpinning || nombres.length < 2) {
+        if(nombres.length < 2) alert("Agrega al menos 2 jugadores para poder girar.");
+        return;
+      }
+
+      isSpinning = true;
+      document.getElementById('resultadoBox').classList.add('hidden');
+
+      const spinAngle = Math.random() * 10 + 25; 
+      const spinDuration = 4000; 
+      const start = performance.now();
+
+      function animate(time) {
+        const elapsed = time - start;
+        const progress = Math.min(elapsed / spinDuration, 1);
+        const easeOut = 1 - Math.pow(1 - progress, 3);
+        
+        currentAngle += (spinAngle * (1 - easeOut)) * 0.05;
+        dibujarRuleta();
+
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          isSpinning = false;
+          determinarGanador();
+        }
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    function determinarGanador() {
+      const numSlices = nombres.length;
+      const sliceAngle = (2 * Math.PI) / numSlices;
+      
+      let normalizedAngle = (3 * Math.PI / 2 - (currentAngle % (2 * Math.PI))) % (2 * Math.PI);
+      if (normalizedAngle < 0) normalizedAngle += 2 * Math.PI;
+
+      const winningIndex = Math.floor(normalizedAngle / sliceAngle);
+      const ganador = nombres[winningIndex];
+
+      document.getElementById('ganadorNombre').textContent = `💸 ${ganador}`;
+      document.getElementById('resultadoBox').classList.remove('hidden');
+    }
+
+    // Carga inicial
+    renderBanners();
+    actualizarTodo();
+  </script>
+</body>
+</html>
